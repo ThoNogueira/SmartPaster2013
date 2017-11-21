@@ -88,6 +88,13 @@ namespace SmartPaster2013
                 var menuItemReplace = new MenuCommand(CallPasteWithReplace, menuCommandReplaceID);
                 mcs.AddCommand(menuItemReplace);
 
+                var menuCommandUpperCamelCaseID = new CommandID(GuidList.guidSmartPaster2013CmdSet, (int)PkgCmdIDList.cmdidPasteAsUpperCamelCase);
+                var menuItemUpperCamelCase = new MenuCommand(CallPasteAsUpperCamelCase, menuCommandUpperCamelCaseID);
+                mcs.AddCommand(menuItemUpperCamelCase);
+
+                var menuCommandLowerCamelCaseID = new CommandID(GuidList.guidSmartPaster2013CmdSet, (int)PkgCmdIDList.cmdidPasteAsLowerCamelCase);
+                var menuItemLowerCamelCase = new MenuCommand(CallPasteAsLowerCamelCase, menuCommandLowerCamelCaseID);
+                mcs.AddCommand(menuItemLowerCamelCase);
             }
         }
         #endregion
@@ -140,6 +147,18 @@ namespace SmartPaster2013
             var sp = new SmartPaster();
             sp.PasteWithReplace(dte);
         }
+        private void CallPasteAsUpperCamelCase(object sender, EventArgs e)
+        {
+            var dte = (DTE2)GetService(typeof(DTE));
+            var sp = new SmartPaster();
+            sp.PasteAsUpperCamelCase(dte);
+        }
 
+        private void CallPasteAsLowerCamelCase(object sender, EventArgs e)
+        {
+            var dte = (DTE2)GetService(typeof(DTE));
+            var sp = new SmartPaster();
+            sp.PasteAsLowerCamelCase(dte);
+        }
     }
 }

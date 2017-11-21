@@ -2,11 +2,25 @@
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace SmartPaster2013
 {
     public static class SmartFormatter
     {
+        #region Aux
+
+        public static string LimparTexto(string texto)
+        {
+            //substitui as letras maiúsculas das preposições por minúsculas
+            texto = Regex.Replace(texto, "^.*\t", "");
+
+            //Retorna texto reescrito
+            return texto.Trim();
+        }
+
+        #endregion 
+
         private const string Quote = "\"";
 
         /// <summary>
@@ -44,21 +58,20 @@ namespace SmartPaster2013
                 .Replace("\t", "\\t") //escape tabs
                 .Replace("\r", "\\r") //cr
                 .Replace("\n", "\\n") //lf
-                //.Replace("\"\" + ", "") //"" +
+                                      //.Replace("\"\" + ", "") //"" +
                 .Replace("\\r\\n", "\" + Environment.NewLine + \r\n\"") //escaped crlf to Env.NewLine
-                ;  
-
+                ;
             return Quote + txt + Quote;
         }
 
         public static string LiterallyInCxx(string txt)
         {
             var lines = from line in txt.Split(new string[] { "\r\n", "\n" }, StringSplitOptions.None)
-                select "\"" + line
-                           .Replace("\\", "\\\\")
-                           .Replace("\"", "\\\"")
-                           .Replace("\t", @"\t")
-                       + "\"";
+                        select "\"" + line
+                                   .Replace("\\", "\\\\")
+                                   .Replace("\"", "\\\"")
+                                   .Replace("\t", @"\t")
+                               + "\"";
             return String.Join("\r\n", lines);
         }
 
@@ -132,6 +145,7 @@ namespace SmartPaster2013
                 string line;
                 while ((line = reader.ReadLine()) != null)
                 {
+                    line = LimparTexto(line);
                     sb.AppendLine(cmtChar + line);
                 }
             }

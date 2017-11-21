@@ -12,6 +12,7 @@ namespace SmartPaster2013
         public const uint cmdidPasteAsStringBuilder = 0x103;
         public const uint cmdidPasteAsBytes = 0x104;
         public const uint cmdidPasteWithReplace = 0x105;
-
+        public const uint cmdidPasteAsUpperCamelCase = 0x106;
+        public const uint cmdidPasteAsLowerCamelCase = 0x107;
     };
 }

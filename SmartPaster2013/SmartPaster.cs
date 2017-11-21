@@ -3,6 +3,8 @@ using System.Windows.Forms; //clipboard
 using EnvDTE;
 using EnvDTE80;
 using System.Text;
+using System.Text.RegularExpressions;
+using System.Linq;
 
 namespace SmartPaster2013
 {
@@ -71,7 +73,7 @@ namespace SmartPaster2013
         private static bool IsXml(DTE2 application)
         {
             var caption = application.ActiveWindow.Caption;
-            foreach (var ext in new [] { ".xml", ".xsd", ".config", ".xaml"})
+            foreach (var ext in new[] { ".xml", ".xsd", ".config", ".xaml" })
             {
                 if (caption.EndsWith(ext, StringComparison.OrdinalIgnoreCase))
                     return true;
@@ -86,11 +88,169 @@ namespace SmartPaster2013
         {
             return application.ActiveWindow.Caption.EndsWith(".cs", StringComparison.OrdinalIgnoreCase);
         }
-
         private static bool IsCxx(DTE2 application)
         {
             return application.ActiveDocument.Language == "C/C++";
         }
+
+        #region Aux
+
+        /// <summary>
+        /// Reescreve o texto em notação camelo minúscula (Lower Camel Case).
+        /// </summary>
+        /// <param name="texto">Texto a ser reescrito.</param>
+        /// <returns>Texto reescrito.</returns>
+        public string TranformaEmNotacaoCameloMinuscula(string texto)
+        {
+            //Remove todos os espaços do texto
+            string textoModificado = texto.Replace(" ", "");
+
+            //Retorna o Texto na notação Lower Camel Case
+            return string.Format("{0}{1}", textoModificado.First().ToString().ToLower(), textoModificado.Substring(1));
+        }
+
+        /// <summary>
+        /// Reescreve o texto em notação camelo maiúscula (Upper Camel Case).
+        /// </summary>
+        /// <param name="texto">Texto a ser reescrito.</param>
+        /// <returns>Texto reescrito.</returns>
+        public string TranformaEmNotacaoCameloMaiuscula(string texto)
+        {
+            texto = Regex.Replace(texto, "[ +]", " ");
+
+            string[] textosSeparados = texto.Split(' ');
+
+            string textoFinal = string.Empty;
+
+            foreach (string textoSeparado in textosSeparados)
+            {
+                if (!string.IsNullOrEmpty(textoSeparado.Trim()))
+                {
+                    //Retorna o Texto na notação Upper Camel Case
+                    textoFinal = string.Format("{0}{1}{2}", textoFinal, textoSeparado.Trim().FirstOrDefault().ToString().ToUpper(), textoSeparado.Trim().Substring(1));
+                }
+            }
+
+            //Retorna o texto final
+            return textoFinal;
+        }
+
+        /// <summary>
+        /// Reescreve o texto adicionando espaço em branco antes de letras Maiúsculas.
+        /// </summary>
+        /// <param name="texto">Texto a ser reescrito.</param>
+        /// <returns>Texto reescrito.</returns>
+        public string SeparaPorMaiuscula(string texto)
+        {
+            //Remove espaços nas extremidades do texto
+            texto = texto.Trim();
+
+            //Para cada letra do texto
+            for (int indice = 1; indice < texto.Length; indice++)
+            {
+                //Se for uma letra maiúscula
+                // E se possuir letra anterior
+                if (char.IsUpper(texto[indice]))
+                {
+                    //Se a letra anterior a corrente for maiúscula
+                    if (char.IsUpper(texto[indice - 1]))
+                    {
+                        //Se não for a ultima letra
+                        // E a letra posterior a corrente for minúscula
+                        if (indice + 1 < texto.Length && char.IsLower(texto[indice + 1]))
+                        {
+                            //Insere um espaço antes da letra
+                            texto = texto.Insert(indice, " ");
+                            //Incrementa o contador pois adicionou-se uma nova letra
+                            indice++;
+                        }
+                    }
+                    //Se a letra anterior a corrente NÃO for maiúscula
+                    else
+                    {
+                        //Insere um espaço antes da letra
+                        texto = texto.Insert(indice, " ");
+                        //Incrementa o contador pois adicionou-se uma nova letra
+                        indice++;
+                    }
+                }
+            }
+
+            //Retorna texto reescrito
+            return texto.Trim();
+        }
+
+        /// <summary>
+        /// Resgata o texto adequado para ser o nome da entidade nos comentários.
+        /// </summary>
+        /// <param name="texto">Nome da classe (definido no modelo).</param>
+        /// <returns>Nome da entidade para ser colocada em cometários.</returns>
+        public string ResgataNomeParaComentario(string texto)
+        {
+            //Remove acentos
+            texto = this.SeparaPorMaiuscula(texto);
+            //Torna as iniciais das preposições minúsculas
+            texto = this.TornaMinusculaAInicialDasPreposicoes(texto);
+
+            //Retorna o texto modificado
+            return texto;
+        }
+
+        /// <summary>
+        /// Transforma em letra minúscula as iniciais das preposições.
+        /// </summary>
+        /// <param name="texto">Texto a ser reescrito.</param>
+        /// <returns>Texto reescrito.</returns>
+        public string TornaMinusculaAInicialDasPreposicoes(string texto)
+        {
+            //substitui as letras maiúsculas das preposições por minúsculas
+            texto = texto.Replace(" Da ", " da ");
+            texto = texto.Replace(" De ", " de ");
+            texto = texto.Replace(" Do ", " do ");
+            texto = texto.Replace(" Na ", " na ");
+            texto = texto.Replace(" No ", " no ");
+
+            //Retorna texto reescrito
+            return texto.Trim();
+        }
+
+        /// <summary>
+        /// Remove acentos
+        /// </summary>
+        /// <param name="texto">Texto sobre o qual se deseja remover os acentos.</param>
+        /// <returns>Texto sem acentos.</returns>
+        public string RemoverAcentos(string texto)
+        {
+            //Substitui as letras com acentos
+
+            // 'ç' e 'Ç'
+            texto = Regex.Replace(texto, "[ç]", "c");
+            texto = Regex.Replace(texto, "[Ç]", "C");
+            // 'ñ' e 'Ñ'
+            texto = Regex.Replace(texto, "[ñ]", "n");
+            texto = Regex.Replace(texto, "[Ñ]", "N");
+            // 'á', 'à', 'ä', 'â', 'ã', 'Á', 'À', 'Ä', 'Â' e 'Ã'
+            texto = Regex.Replace(texto, "[áàäâã]", "a");
+            texto = Regex.Replace(texto, "[ÁÀÄÂÃ]", "A");
+            // 'é', 'è', 'ë', 'ê', 'É', 'È', 'Ë' e 'Ê'
+            texto = Regex.Replace(texto, "[éèëê]", "e");
+            texto = Regex.Replace(texto, "[ÉÈËÊ]", "E");
+            // 'í', 'ì', 'ï', 'î', 'Í', 'Ì', 'Ï' e 'Î'
+            texto = Regex.Replace(texto, "[íìïî]", "i");
+            texto = Regex.Replace(texto, "[ÍÌÏÎ]", "I");
+            // 'ó', 'ò', 'ö', 'ô', 'õ', 'Ó', 'Ò', 'Ö', 'Ô' e 'Õ'
+            texto = Regex.Replace(texto, "[óòöôõ]", "o");
+            texto = Regex.Replace(texto, "[ÓÒÖÔÕ]", "O");
+            // 'ú', 'ù', 'ü', 'û', 'Ú', 'Ù', 'Ü' e 'Û'
+            texto = Regex.Replace(texto, "[úùüû]", "u");
+            texto = Regex.Replace(texto, "[ÚÙÜÛ]", "U");
+
+            //Retorna o texto modificado
+            return texto;
+        }
+
+        #endregion
+
         #region "Paste As ..."
 
         /// <summary>
@@ -118,6 +278,7 @@ namespace SmartPaster2013
             {
                 var sb = new StringBuilder();
                 var count = 0;
+                string text = ClipboardText;
                 foreach (var ch in ClipboardText)
                 {
                     sb.AppendFormat("0x{0:x2}, ", (int)ch);
@@ -157,7 +318,6 @@ namespace SmartPaster2013
             Paste(application, SmartFormatter.StringinizeInCs(ClipboardText));
         }
 
-
         /// <summary>
         /// Public method to paste and format clipboard text as comment the cursor 
         /// location for the configured or active window's langage .
@@ -178,9 +338,10 @@ namespace SmartPaster2013
             {
                 text = SmartFormatter.CommentizeInCs(ClipboardText);
             }
+
+            text = ResgataNomeParaComentario(text);
             Paste(application, text);
         }
-
 
         /// <summary>
         /// Public method to paste format clipboard text into a specified region
@@ -192,7 +353,7 @@ namespace SmartPaster2013
             const string region = "myRegion";
 
             //it's so simple, we really don't need a function
-            string csRegionized = "#region " + region + Environment.NewLine + ClipboardText + Environment.NewLine + "#endregion";
+            string csRegionized = "#region " + region + Environment.NewLine + SmartFormatter.LimparTexto(ClipboardText) + Environment.NewLine + "#endregion";
 
             //and paste
             Paste(application, csRegionized);
@@ -207,8 +368,8 @@ namespace SmartPaster2013
         {
             const string stringbuilder = "sb";
             Paste(application, IsVb(application) ?
-                SmartFormatter.StringbuilderizeInVb(ClipboardText, stringbuilder) :
-                SmartFormatter.StringbuilderizeInCs(ClipboardText, stringbuilder));
+                SmartFormatter.StringbuilderizeInVb(SmartFormatter.LimparTexto(ClipboardText), stringbuilder) :
+                SmartFormatter.StringbuilderizeInCs(SmartFormatter.LimparTexto(ClipboardText), stringbuilder));
         }
 
         public void PasteWithReplace(DTE2 application)
@@ -217,12 +378,32 @@ namespace SmartPaster2013
             {
                 if (replaceForm.ShowDialog() == DialogResult.OK)
                 {
-                    var src = replaceForm.TextToReplace;
-                    var dst = replaceForm.ReplaceText;
-                    var txt = ClipboardText.Replace(src, dst);
-                    Paste(application, txt);
+                    if (replaceForm.Regex)
+                    {
+                        var src = replaceForm.TextToReplace;
+                        var dst = replaceForm.ReplaceText;
+                        var text = Regex.Replace(ClipboardText, src, dst);
+                        Paste(application, text);
+                    }
+                    else
+                    {
+                        var src = replaceForm.TextToReplace;
+                        var dst = replaceForm.ReplaceText;
+                        var text = ClipboardText.Replace(src, dst);
+                        Paste(application, text);
+                    }
                 }
             }
+        }
+
+        public void PasteAsUpperCamelCase(DTE2 application)
+        {
+            Paste(application, TranformaEmNotacaoCameloMaiuscula(SmartFormatter.LimparTexto(RemoverAcentos( ClipboardText))));
+        }
+
+        public void PasteAsLowerCamelCase(DTE2 application)
+        {
+            Paste(application, TranformaEmNotacaoCameloMinuscula(SmartFormatter.LimparTexto(RemoverAcentos(ClipboardText))));
         }
 
         #endregion
